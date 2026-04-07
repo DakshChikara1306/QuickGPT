@@ -2,7 +2,7 @@ import Chat from '../models/Chat.js';
 import User from '../models/User.js';
 import axios from 'axios';
 import genAI from '../configs/Gemini.js';
-import imagekit from '../configs/imagekit.js';
+import imagekit from '../configs/imageKit.js';
 
 // ===============================
 // TEXT MESSAGE CONTROLLER (GEMINI)
