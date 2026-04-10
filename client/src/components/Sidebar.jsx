@@ -1,19 +1,63 @@
-import React, { useState } from 'react'
-import { assets } from '../assets/assets'
-import { useAppContext } from '../context/AppContext'
-import moment from 'moment/moment'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from "react";
+import moment from "moment/moment";
+import { toast } from "react-hot-toast";
+
+// 🔹 Assets
+import { assets } from "../assets/assets";
+
+// 🔹 Context
+import { useAppContext } from "../context/AppContext";
 
 const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
+  // =========================================================
+  // 🌐 Global State from Context
+  // =========================================================
+  const {
+    chats,
+    setSelectedChat,
+    theme,
+    setTheme,
+    user,
+    navigate,
+    createNewChat,
+    axios,
+    fetchUsersChats,
+    token,
+  } = useAppContext();
 
-  // 🌐 Global state from context
-  const { chats, setSelectedChat, theme, setTheme, user } = useAppContext()
+  const { logout } = useAppContext();
 
-  // 🔍 Local state for search
-  const [search, setSearch] = useState('')
+  // 🔍 Local search state
+  const [search, setSearch] = useState("");
 
-  // 🚀 Navigation
-  const navigate = useNavigate()
+  // =========================================================
+  // 🗑 Delete Chat
+  // =========================================================
+  const deleteChat = async (e, chatId) => {
+    e.stopPropagation();
+
+    const confirmDelete = window.confirm("Are you sure?");
+    if (!confirmDelete) return;
+
+    try {
+      const { data } = await axios.post(
+        "/api/chat/delete",
+        { chatId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (data.success) {
+        await fetchUsersChats(); // refresh chats
+        toast.success("Chat deleted successfully");
+      }
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Failed to delete chat"
+      );
+    }
+  };
 
   return (
     <div
@@ -23,25 +67,35 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
         border-r border-[#80609F]/30 backdrop-blur-3xl
         transition-all duration-500
         max-md:absolute left-0 z-1
-        ${!isMenuOpen && 'max-md:-translate-x-full'}
+        ${!isMenuOpen && "max-md:-translate-x-full"}
       `}
     >
-
       {/* 🔷 Logo */}
       <img
-        src={theme === 'dark' ? assets.logo_full : assets.logo_full_dark}
+        src={
+          theme === "dark"
+            ? assets.logo_full
+            : assets.logo_full_dark
+        }
         alt="logo"
-        className='w-full max-w-48'
+        className="w-full max-w-48"
       />
 
       {/* ➕ New Chat Button */}
-      <button className="flex justify-center items-center w-full py-2 mt-10 text-white bg-linear-to-r from-[#A456F7] to-[#3D81F6] text-sm rounded-md cursor-pointer">
-        <span className='mr-2 text-xl'>+</span> New Chat
+      <button
+        onClick={createNewChat}
+        className="flex justify-center items-center w-full py-2 mt-10 text-white bg-linear-to-r from-[#A456F7] to-[#3D81F6] text-sm rounded-md cursor-pointer"
+      >
+        <span className="mr-2 text-xl">+</span> New Chat
       </button>
 
       {/* 🔍 Search Input */}
       <div className="flex items-center gap-2 p-3 mt-4 border border-gray-400 dark:border-white/20 rounded-md">
-        <img src={assets.search_icon} alt='' className='w-4 not-dark:invert' />
+        <img
+          src={assets.search_icon}
+          alt=""
+          className="w-4 not-dark:invert"
+        />
         <input
           type="text"
           placeholder="Search Conversations"
@@ -52,64 +106,71 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
       </div>
 
       {/* 📌 Recent Chats Label */}
-      {chats.length > 0 && <p className='mt-4 text-sm'>Recent Chats</p>}
+      {chats.length > 0 && (
+        <p className="mt-4 text-sm">Recent Chats</p>
+      )}
 
       {/* 💬 Chat List */}
       <div className="flex-1 overflow-y-scroll mt-3 text-sm space-y-3">
-        {
-          chats
-            .filter((chat) =>
-              chat.messages[0]
-                ? chat.messages[0]?.content
-                    .toLowerCase()
-                    .includes(search.toLowerCase())
-                : chat.name.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((chat) => (
-              <div
-                key={chat._id}
-                onClick={() => {
-                  navigate('/')
-                  setSelectedChat(chat)
-                  setIsMenuOpen(false)
-                }}
-                className="p-2 px-4 dark:bg-[#57317C]/10 border border-gray-300 dark:border-[#80609F]/15 rounded-md cursor-pointer flex justify-between group"
-              >
+        {chats
+          .filter((chat) =>
+            chat.messages[0]
+              ? chat.messages[0]?.content
+                  .toLowerCase()
+                  .includes(search.toLowerCase())
+              : chat.name
+                  .toLowerCase()
+                  .includes(search.toLowerCase())
+          )
+          .map((chat) => (
+            <div
+              key={chat._id}
+              onClick={() => {
+                navigate("/");
+                setSelectedChat(chat);
+                setIsMenuOpen(false);
+              }}
+              className="p-2 px-4 dark:bg-[#57317C]/10 border border-gray-300 dark:border-[#80609F]/15 rounded-md cursor-pointer flex justify-between group"
+            >
+              {/* 📝 Chat Info */}
+              <div>
+                <p className="truncate w-full">
+                  {chat.messages.length > 0
+                    ? chat.messages[0].content.slice(0, 32)
+                    : chat.name}
+                </p>
 
-                {/* 📝 Chat Info */}
-                <div>
-                  <p className="truncate w-full">
-                    {chat.messages.length > 0
-                      ? chat.messages[0].content.slice(0, 32)
-                      : chat.name}
-                  </p>
-
-                  <p className="mt-2 text-xs text-gray-500 dark:text-[#B1A6C0]">
-                    {moment(chat.updatedAt).fromNow()}
-                  </p>
-                </div>
-
-                {/* 🗑 Delete Icon (UI only) */}
-                <img
-                  src={assets.bin_icon}
-                  className="hidden group-hover:block w-4 cursor-pointer not-dark:invert"
-                  alt=""
-                />
+                {/* ⏱ Last updated time */}
+                <p className="mt-2 text-xs text-gray-500 dark:text-[#B1A6C0]">
+                  {moment(chat.updatedAt).fromNow()}
+                </p>
               </div>
-            ))
-        }
+
+              {/* 🗑 Delete Icon */}
+              <img
+                onClick={(e) => deleteChat(e, chat._id)}
+                src={assets.bin_icon}
+                className="hidden group-hover:block w-4 cursor-pointer not-dark:invert"
+                alt=""
+              />
+            </div>
+          ))}
       </div>
 
       {/* 🌍 Community Section */}
       <div
         onClick={() => {
-          navigate('/community')
-          setIsMenuOpen(false)
+          navigate("/community");
+          setIsMenuOpen(false);
         }}
         className="flex items-center gap-2 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md cursor-pointer hover:scale-103 transition-all"
       >
-        <img src={assets.gallery_icon} className='w-4.5 not-dark:invert' alt="" />
-        <div className='flex flex-col text-sm'>
+        <img
+          src={assets.gallery_icon}
+          className="w-4.5 not-dark:invert"
+          alt=""
+        />
+        <div className="flex flex-col text-sm">
           <p>Community Images</p>
         </div>
       </div>
@@ -117,12 +178,16 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
       {/* 💎 Credits Section */}
       <div
         onClick={() => {
-          navigate('/credits')
-          setIsMenuOpen(false)
+          navigate("/credits");
+          setIsMenuOpen(false);
         }}
         className="flex items-center gap-2 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md cursor-pointer hover:scale-103 transition-all"
       >
-        <img src={assets.diamond_icon} className="w-4.5 dark:invert" alt="" />
+        <img
+          src={assets.diamond_icon}
+          className="w-4.5 dark:invert"
+          alt=""
+        />
         <div className="flex flex-col text-sm">
           <p>Credits : {user?.credits}</p>
           <p className="text-xs text-gray-400">
@@ -134,7 +199,11 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
       {/* 🌙 Theme Toggle */}
       <div className="flex items-center justify-between gap-2 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md">
         <div className="flex items-center gap-2 text-sm">
-          <img src={assets.theme_icon} className="w-4 not-dark:invert" alt="" />
+          <img
+            src={assets.theme_icon}
+            className="w-4 not-dark:invert"
+            alt=""
+          />
           <p>Dark Mode</p>
         </div>
 
@@ -154,16 +223,21 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
 
       {/* 👤 User Section */}
       <div className="flex items-center gap-3 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md cursor-pointer group">
-        <img src={assets.user_icon} className="w-7 rounded-full" alt="" />
+        <img
+          src={assets.user_icon}
+          className="w-7 rounded-full"
+          alt=""
+        />
 
-        <p className='flex-1 text-sm dark:text-primary truncate'>
-          {user ? user.name : 'Login your account'}
+        <p className="flex-1 text-sm dark:text-primary truncate">
+          {user ? user.name : "Login your account"}
         </p>
 
         {user && (
           <img
+            onClick={logout}
             src={assets.logout_icon}
-            className='h-5 cursor-pointer hidden not-dark:invert group-hover:block'
+            className="h-5 cursor-pointer hidden not-dark:invert group-hover:block"
             alt=""
           />
         )}
@@ -174,11 +248,10 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen }) => {
         src={assets.close_icon}
         alt=""
         onClick={() => setIsMenuOpen(false)}
-        className='absolute top-3 right-3 w-5 h-5 cursor-pointer md:hidden not-dark:invert'
+        className="absolute top-3 right-3 w-5 h-5 cursor-pointer md:hidden not-dark:invert"
       />
-
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

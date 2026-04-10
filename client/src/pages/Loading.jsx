@@ -1,27 +1,34 @@
-import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAppContext } from '../context/AppContext'
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+// 🔹 Context
+import { useAppContext } from "../context/AppContext";
 
 const Loading = () => {
+  const navigate = useNavigate();
+  const { fetchUser } = useAppContext();
 
-    const navigate = useNavigate()
-    const {fetchUser} = useAppContext()
+  // =========================================================
+  // ⏳ Simulate loading delay, then fetch user and redirect
+  // =========================================================
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      fetchUser();
+      navigate("/");
+    }, 8000);
 
-    useEffect(()=>{
-        const timeout = setTimeout(()=>{
-            fetchUser()
-            navigate('/')
-        },8000)
-        return ()=> clearTimeout(timeout)
-    },[])
+    // 🧹 Cleanup timeout on unmount
+    return () => clearTimeout(timeout);
+  }, []);
 
-    return (
-        <div className='bg-linear-to-b from-[#531B81] to-[#29184B] backdrop-opacity-60 flex items-center justify-center h-screen w-screen text-white text-2xl'>
-            <div className='w-10 h-10 rounded-full border-3 border-white border-t-transparent animate-spin'>
+  return (
+    <div className="bg-linear-to-b from-[#531B81] to-[#29184B] backdrop-opacity-60 flex items-center justify-center h-screen w-screen text-white text-2xl">
+      
+      {/* 🔄 Loading Spinner */}
+      <div className="w-10 h-10 rounded-full border-3 border-white border-t-transparent animate-spin"></div>
+    
+    </div>
+  );
+};
 
-            </div>
-        </div>
-    )
-}
-
-export default Loading
+export default Loading;

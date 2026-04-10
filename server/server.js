@@ -1,38 +1,62 @@
-import express from 'express';
-import cors from 'cors';
-import 'dotenv/config';
-import connectDB from './configs/db.js';
-import userRouter from './routes/userRoutes.js';
-import chatRouter from './routes/chatRoutes.js';
-import messageRouter from './routes/messageRoutes.js';
-import creditRouter from './routes/creditRoutes.js';
-import { stripeWebhooks } from './controllers/webhooks.js';
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
 
+// 🔹 DB
+import connectDB from "./configs/db.js";
 
+// 🔹 Routes
+import userRouter from "./routes/userRoutes.js";
+import chatRouter from "./routes/chatRoutes.js";
+import messageRouter from "./routes/messageRoutes.js";
+import creditRouter from "./routes/creditRoutes.js";
+
+// 🔹 Webhooks
+import { stripeWebhooks } from "./controllers/webhooks.js";
 
 const app = express();
 
+// =========================================================
+// 🔌 Connect to Database
+// =========================================================
 await connectDB();
 
-//stipe webhooks route
-app.post('/api/stripe', express.raw({ type: 'application/json' }), stripeWebhooks);
+// =========================================================
+// 🔔 Stripe Webhook Route
+// Must be before express.json() (raw body required)
+// =========================================================
+app.post(
+  "/api/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhooks
+);
 
-//middleware
+// =========================================================
+// ⚙️ Middlewares
+// =========================================================
 app.use(cors());
 app.use(express.json());
 
-//routes
-app.get('/', (req, res) => {
-    res.send('Server is Live!');
+// =========================================================
+// 🏠 Health Check Route
+// =========================================================
+app.get("/", (req, res) => {
+  res.send("Server is Live!");
 });
-app.use('/api/user', userRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/message', messageRouter);
-app.use('/api/credit', creditRouter);
 
+// =========================================================
+// 📡 API Routes
+// =========================================================
+app.use("/api/user", userRouter);
+app.use("/api/chat", chatRouter);
+app.use("/api/message", messageRouter);
+app.use("/api/credit", creditRouter);
 
+// =========================================================
+// 🚀 Start Server
+// =========================================================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
