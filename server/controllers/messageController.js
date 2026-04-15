@@ -60,9 +60,9 @@ export const textMessageController = async (req, res) => {
     }));
 
     // 🤖 Initialize Gemini model
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite-preview",
-    });
+        const model = genAI.getGenerativeModel({
+        model:"gemini-3-flash-preview",
+      });
 
     // 💬 Start chat session (exclude latest message)
     const chatSession = model.startChat({
@@ -93,11 +93,15 @@ export const textMessageController = async (req, res) => {
     );
 
     return res.json({
-      message: reply,
+      reply: reply,
       success: true,
     });
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error("Gemini Full Error:", {
+  message: error.message,
+  status: error?.status,
+  response: error?.response?.data,
+});
 
     return res.status(500).json({
       error: error.message || "Internal Server Error",
